@@ -2,40 +2,93 @@
 
 RESTful API backend for the HRMS Lite application built with Node.js, Express, Prisma, and PostgreSQL (via Neon DB).
 
-## 🚀 Overview
+## 📋 Project Overview
 
-This backend provides a complete API for managing employees and attendance records. It features:
-- RESTful API design
-- Server-side validation
-- Error handling with proper HTTP status codes
-- Database persistence with Prisma ORM
-- PostgreSQL database hosted on Neon DB
+The HRMS Lite Backend is a RESTful API server that provides the core functionality for managing employees and attendance records. It serves as the data layer and business logic handler for the HRMS Lite frontend application.
+
+### Key Features
+
+- **Employee Management API**: Create, read, and delete employee records with validation
+- **Attendance Tracking API**: Mark and retrieve attendance records with date-based filtering
+- **Dashboard Analytics**: Provide summary statistics for the frontend dashboard
+- **RESTful Design**: Standard HTTP methods and status codes for all operations
+- **Server-Side Validation**: Input validation using express-validator
+- **Error Handling**: Comprehensive error handling with appropriate HTTP status codes
+- **Database Integration**: PostgreSQL database managed through Prisma ORM
+- **Cloud Database**: Uses Neon DB (free tier) for PostgreSQL hosting
+
+### API Capabilities
+
+- Employee CRUD operations with unique constraints (Employee ID, Email)
+- Attendance marking with automatic updates for duplicate dates
+- Flexible filtering (by employee, date range)
+- Dashboard summary with aggregated statistics
+- Health check endpoint for monitoring
 
 ## 🛠️ Tech Stack
 
-- **Node.js** - JavaScript runtime
-- **Express.js** - Web framework
-- **Prisma** - Modern ORM for database management
-- **PostgreSQL** - Relational database (hosted on Neon DB)
+- **Node.js** - JavaScript runtime environment
+- **Express.js** - Web application framework for building REST APIs
+- **Prisma** - Modern ORM (Object-Relational Mapping) for database management
+- **PostgreSQL** - Relational database (hosted on Neon DB - free tier)
 - **express-validator** - Request validation middleware
 - **dotenv** - Environment variable management
-- **cors** - Cross-Origin Resource Sharing
+- **cors** - Cross-Origin Resource Sharing middleware
 
-## 📋 Prerequisites
+## 🚀 Steps to Run the Project Locally
 
-- Node.js (v18 or higher)
-- npm or yarn
-- Neon DB account (free tier available) - [Sign up here](https://console.neon.tech)
+### Prerequisites
 
-## 🔧 Installation & Setup
+Before starting, ensure you have:
+- **Node.js** (v18 or higher) installed
+- **npm** or **yarn** package manager
+- A **Neon DB account** (free tier available) - [Sign up here](https://console.neon.tech)
 
-### 1. Install Dependencies
+### Step 1: Clone and Navigate to Backend
+
+```bash
+# If cloning the entire repository
+git clone <repository-url>
+cd quess-corps-hrms/backend
+
+# Or if already in the project root
+cd backend
+```
+
+### Step 2: Install Dependencies
 
 ```bash
 npm install
 ```
 
-### 2. Set Up Environment Variables
+### Step 3: Set Up Neon DB (Free PostgreSQL Database)
+
+1. **Create a Neon Account**
+   - Go to [https://console.neon.tech](https://console.neon.tech)
+   - Sign up for a free account (no credit card required)
+
+2. **Create a New Project**
+   - Click "Create a project"
+   - Choose a project name (e.g., "HRMS Lite")
+   - Select a region closest to you
+   - Click "Create project"
+
+3. **Get Your Connection String**
+   - On your Project Dashboard, click the **"Connect"** button
+   - In the connection modal:
+     - Select your branch (usually `main`)
+     - Select your database (default is usually `neondb`)
+     - Select your role
+     - **Keep "Connection pooling" enabled** (recommended)
+   - Copy the connection string
+   
+   **Important**: Remove `&channel_binding=require` from the connection string if present. Use only `?sslmode=require`.
+   
+   Example format: `postgresql://user:password@ep-xxxxx-pooler.region.aws.neon.tech/dbname?sslmode=require`
+
+For detailed Neon DB setup, see [NEON_SETUP.md](./NEON_SETUP.md)
+
+### Step 4: Configure Environment Variables
 
 Create a `.env` file in the backend root directory:
 
@@ -43,23 +96,16 @@ Create a `.env` file in the backend root directory:
 touch .env
 ```
 
-Add the following environment variables:
+Edit the `.env` file and add:
 
 ```env
-DATABASE_URL="postgresql://username:password@ep-xxxxx-pooler.region.aws.neon.tech/dbname?sslmode=require"
+DATABASE_URL="postgresql://your-username:your-password@ep-xxxxx-pooler.region.aws.neon.tech/neondb?sslmode=require"
 PORT=5000
 ```
 
-**Getting your Neon DB connection string:**
-1. Go to [Neon Console](https://console.neon.tech)
-2. Create a new project or select an existing one
-3. Click "Connect" on your Project Dashboard
-4. Copy the connection string (make sure to remove `&channel_binding=require` if present)
-5. Paste it into your `.env` file
+**Note**: Replace the connection string with your actual Neon DB connection string.
 
-For detailed Neon DB setup, see [NEON_SETUP.md](./NEON_SETUP.md)
-
-### 3. Set Up Database
+### Step 5: Set Up Database Schema
 
 ```bash
 # Generate Prisma Client
@@ -69,7 +115,9 @@ npm run generate
 npx prisma db push
 ```
 
-### 4. Start the Server
+This will create the `Employee` and `Attendance` tables in your Neon database.
+
+### Step 6: Start the Server
 
 **Development mode (with auto-reload):**
 ```bash
@@ -82,6 +130,111 @@ npm start
 ```
 
 The server will start on `http://localhost:5000` (or the port specified in your `.env` file).
+
+### Step 7: Verify the API
+
+Test the health check endpoint:
+```bash
+curl http://localhost:5000/api/health
+```
+
+Expected response:
+```json
+{
+  "status": "ok",
+  "message": "HRMS Lite API is running"
+}
+```
+
+### Quick Start Commands Summary
+
+```bash
+# Install dependencies
+npm install
+
+# Set up .env file with DATABASE_URL and PORT
+# Then run:
+npm run generate
+npx prisma db push
+npm run dev
+```
+
+## 📝 Assumptions & Limitations
+
+### Assumptions
+
+1. **No Authentication Required**: The API assumes no authentication system. All endpoints are publicly accessible (suitable for development/internal use only)
+
+2. **Single Organization**: The system is designed for a single organization with no multi-tenant architecture
+
+3. **Manual Employee ID Assignment**: Employee IDs are manually assigned by users and must be unique. The system does not auto-generate employee IDs
+
+4. **Flexible Date Attendance**: Attendance can be marked for any date (past, present, or future) to allow for corrections and advance planning
+
+5. **One Record Per Day**: Only one attendance record exists per employee per day. Marking attendance again for the same date updates the existing record (upsert behavior)
+
+6. **Binary Status Model**: Attendance status is limited to "Present" or "Absent" only. No additional states like "Half Day", "Leave", or "Holiday"
+
+7. **Cascade Deletion**: Deleting an employee automatically deletes all associated attendance records (cascade delete)
+
+8. **Date Normalization**: Date filters normalize to start of day (00:00:00) for startDate and end of day (23:59:59) for endDate to handle timezone differences
+
+9. **CORS Enabled for All Origins**: CORS is configured to allow requests from any origin (should be restricted in production)
+
+10. **ES Modules**: The project uses ES modules (`type: "module"`) instead of CommonJS
+
+### Limitations
+
+1. **No Authentication/Authorization**: There is no user authentication, authorization, or role-based access control. All API endpoints are publicly accessible
+
+2. **No Rate Limiting**: The API does not implement rate limiting, making it vulnerable to abuse or DDoS attacks
+
+3. **No Input Sanitization**: While validation exists, there is no advanced input sanitization to prevent injection attacks
+
+4. **No Audit Logging**: No logging system to track who made changes, when, or what changes were made
+
+5. **No Soft Deletes**: Employee deletion is permanent. Once deleted, employee and attendance records cannot be recovered
+
+6. **No Bulk Operations**: No endpoints for bulk creating, updating, or deleting multiple records at once
+
+7. **No Pagination**: List endpoints (GET /api/employees, GET /api/attendance) return all records without pagination, which may cause performance issues with large datasets
+
+8. **No Sorting**: Results are returned in default database order with no sorting options
+
+9. **No Advanced Filtering**: Limited filtering options. No search functionality, partial matching, or complex queries
+
+10. **No Data Validation for Status**: While status must be "Present" or "Absent", there's no enum constraint at the database level
+
+11. **No Transaction Management**: Complex operations don't use database transactions, which could lead to data inconsistency in edge cases
+
+12. **No Caching**: All database queries are executed directly without caching, which may impact performance
+
+13. **No API Versioning**: No versioning system for API endpoints, making future breaking changes difficult
+
+14. **Limited Error Details**: Error messages may not always provide detailed debugging information in production
+
+15. **No Webhooks/Events**: No event system or webhooks for notifying external systems of changes
+
+### Future Enhancements
+
+For production use, consider adding:
+- JWT-based authentication and authorization
+- Role-based access control (Admin, HR, Employee)
+- Rate limiting and API throttling
+- Input sanitization and security hardening
+- Comprehensive audit logging
+- Soft delete functionality
+- Pagination and sorting for list endpoints
+- Advanced filtering and search capabilities
+- Database-level constraints and enums
+- Transaction management for complex operations
+- Caching layer (Redis)
+- API versioning (e.g., /api/v1/)
+- Webhook/event system
+- Comprehensive testing (unit, integration, e2e)
+- API documentation (Swagger/OpenAPI)
+- Monitoring and logging (Winston, Sentry)
+- Health checks and metrics endpoints
 
 ## 📁 Project Structure
 
@@ -100,39 +253,6 @@ backend/
 └── README.md
 ```
 
-## 🗄️ Database Schema
-
-### Employee Model
-```prisma
-model Employee {
-  id          String       @id @default(uuid())
-  employeeId  String       @unique
-  fullName    String
-  email       String       @unique
-  department  String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  attendances Attendance[]
-}
-```
-
-### Attendance Model
-```prisma
-model Attendance {
-  id         String   @id @default(uuid())
-  employeeId String
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
-  date       DateTime
-  status     String   // "Present" or "Absent"
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@unique([employeeId, date])
-  @@index([employeeId])
-  @@index([date])
-}
-```
-
 ## 🔌 API Endpoints
 
 ### Base URL
@@ -140,234 +260,22 @@ model Attendance {
 http://localhost:5000/api
 ```
 
-### Health Check
-
-#### GET /api/health
-Check if the API is running.
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "message": "HRMS Lite API is running"
-}
-```
-
----
-
 ### Employee Management
-
-#### GET /api/employees
-Get all employees.
-
-**Response:**
-```json
-[
-  {
-    "id": "uuid",
-    "employeeId": "EMP001",
-    "fullName": "John Doe",
-    "email": "john.doe@example.com",
-    "department": "Engineering",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z",
-    "_count": {
-      "attendances": 5
-    }
-  }
-]
-```
-
-#### GET /api/employees/:id
-Get a specific employee by ID.
-
-**Parameters:**
-- `id` (path) - Employee UUID
-
-**Response:**
-```json
-{
-  "id": "uuid",
-  "employeeId": "EMP001",
-  "fullName": "John Doe",
-  "email": "john.doe@example.com",
-  "department": "Engineering",
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z",
-  "attendances": [...]
-}
-```
-
-**Error Responses:**
-- `404` - Employee not found
-
-#### POST /api/employees
-Create a new employee.
-
-**Request Body:**
-```json
-{
-  "employeeId": "EMP001",
-  "fullName": "John Doe",
-  "email": "john.doe@example.com",
-  "department": "Engineering"
-}
-```
-
-**Validation:**
-- `employeeId` - Required, must be unique
-- `fullName` - Required
-- `email` - Required, must be valid email format, must be unique
-- `department` - Required
-
-**Response:**
-```json
-{
-  "id": "uuid",
-  "employeeId": "EMP001",
-  "fullName": "John Doe",
-  "email": "john.doe@example.com",
-  "department": "Engineering",
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z"
-}
-```
-
-**Error Responses:**
-- `400` - Validation errors
-- `409` - Duplicate employee ID or email
-
-#### DELETE /api/employees/:id
-Delete an employee.
-
-**Parameters:**
-- `id` (path) - Employee UUID
-
-**Response:**
-- `204` - No content (success)
-
-**Error Responses:**
-- `404` - Employee not found
-
----
+- `GET /api/employees` - Get all employees
+- `GET /api/employees/:id` - Get employee by ID
+- `POST /api/employees` - Create new employee
+- `DELETE /api/employees/:id` - Delete employee
 
 ### Attendance Management
+- `GET /api/attendance` - Get all attendance records (with optional filters: `employeeId`, `startDate`, `endDate`)
+- `GET /api/attendance/employee/:employeeId` - Get attendance for specific employee
+- `POST /api/attendance` - Mark attendance
+- `GET /api/attendance/dashboard/summary` - Get dashboard summary
 
-#### GET /api/attendance
-Get all attendance records with optional filters.
+### Health Check
+- `GET /api/health` - API health check
 
-**Query Parameters:**
-- `employeeId` (optional) - Filter by employee UUID
-- `startDate` (optional) - Filter from date (ISO 8601 format)
-- `endDate` (optional) - Filter to date (ISO 8601 format)
-
-**Example:**
-```
-GET /api/attendance?employeeId=uuid&startDate=2024-01-01&endDate=2024-01-31
-```
-
-**Response:**
-```json
-[
-  {
-    "id": "uuid",
-    "employeeId": "uuid",
-    "date": "2024-01-01T00:00:00.000Z",
-    "status": "Present",
-    "createdAt": "2024-01-01T00:00:00.000Z",
-    "updatedAt": "2024-01-01T00:00:00.000Z",
-    "employee": {
-      "id": "uuid",
-      "employeeId": "EMP001",
-      "fullName": "John Doe",
-      "email": "john.doe@example.com",
-      "department": "Engineering"
-    }
-  }
-]
-```
-
-#### GET /api/attendance/employee/:employeeId
-Get attendance records for a specific employee with summary.
-
-**Parameters:**
-- `employeeId` (path) - Employee UUID
-
-**Query Parameters:**
-- `startDate` (optional) - Filter from date
-- `endDate` (optional) - Filter to date
-
-**Response:**
-```json
-{
-  "attendances": [...],
-  "summary": {
-    "totalRecords": 20,
-    "totalPresent": 18,
-    "totalAbsent": 2
-  }
-}
-```
-
-#### POST /api/attendance
-Mark attendance for an employee.
-
-**Request Body:**
-```json
-{
-  "employeeId": "uuid",
-  "date": "2024-01-01T00:00:00.000Z",
-  "status": "Present"
-}
-```
-
-**Validation:**
-- `employeeId` - Required, must exist
-- `date` - Required, must be valid ISO 8601 date
-- `status` - Required, must be "Present" or "Absent"
-
-**Response:**
-```json
-{
-  "id": "uuid",
-  "employeeId": "uuid",
-  "date": "2024-01-01T00:00:00.000Z",
-  "status": "Present",
-  "createdAt": "2024-01-01T00:00:00.000Z",
-  "updatedAt": "2024-01-01T00:00:00.000Z",
-  "employee": {...}
-}
-```
-
-**Note:** If attendance already exists for the same employee and date, it will be updated.
-
-**Error Responses:**
-- `400` - Validation errors
-- `404` - Employee not found
-- `409` - Attendance already marked (rare, usually updates instead)
-
-#### GET /api/attendance/dashboard/summary
-Get dashboard summary statistics.
-
-**Response:**
-```json
-{
-  "totalEmployees": 10,
-  "totalAttendanceRecords": 200,
-  "presentCount": 180,
-  "absentCount": 20,
-  "employeesSummary": [
-    {
-      "id": "uuid",
-      "employeeId": "EMP001",
-      "fullName": "John Doe",
-      "department": "Engineering",
-      "totalAttendanceDays": 20,
-      "presentDays": 18
-    }
-  ]
-}
-```
+For detailed API documentation with request/response examples, see the [Main Project README](../README.md) or test the endpoints using tools like Postman or curl.
 
 ## 🛠️ Development Commands
 
@@ -391,60 +299,11 @@ npm run migrate
 npm run studio
 ```
 
-## 🔒 Validation & Error Handling
-
-### Validation Rules
-
-**Employee Creation:**
-- Employee ID must be unique
-- Email must be valid format and unique
-- All fields are required
-
-**Attendance Marking:**
-- Employee must exist
-- Date must be valid ISO 8601 format
-- Status must be "Present" or "Absent"
-- One attendance record per employee per day (updates existing)
-
-### Error Responses
-
-All errors follow a consistent format:
-
-```json
-{
-  "error": "Error message here"
-}
-```
-
-For validation errors:
-```json
-{
-  "errors": [
-    {
-      "msg": "Email is required",
-      "param": "email",
-      "location": "body"
-    }
-  ]
-}
-```
-
-### HTTP Status Codes
-
-- `200` - Success
-- `201` - Created
-- `204` - No Content (successful delete)
-- `400` - Bad Request (validation errors)
-- `404` - Not Found
-- `409` - Conflict (duplicate entries)
-- `500` - Internal Server Error
-
 ## 🚀 Deployment
 
 ### Environment Variables for Production
 
-Make sure to set these in your hosting platform:
-
+Set these in your hosting platform:
 ```env
 DATABASE_URL="your-neon-db-connection-string"
 PORT=5000  # or let the platform assign it
@@ -469,62 +328,10 @@ npm start
 - **Heroku** - Traditional PaaS option
 - **Fly.io** - Global edge deployment
 
-### Database Migration in Production
-
-For production, use migrations instead of `db push`:
-
-```bash
-# Create migration
-npm run migrate
-
-# Apply migrations (in production)
-npx prisma migrate deploy
-```
-
-## 🐛 Troubleshooting
-
-### Connection Issues
-
-**Error: `P1001 - Can't reach database server`**
-
-1. Verify your `DATABASE_URL` is correct
-2. Check that your Neon project is active (not paused)
-3. Ensure connection string uses `?sslmode=require` (not `&channel_binding=require`)
-4. Try using direct connection (without `-pooler`)
-
-**Error: `Environment variable not found: DATABASE_URL`**
-
-1. Make sure `.env` file exists in the backend root
-2. Verify the file contains `DATABASE_URL=...`
-3. Restart the server after changing `.env`
-
-### Database Schema Issues
-
-**Error: `Table does not exist`**
-
-Run:
-```bash
-npx prisma db push
-```
-
-**Error: `Prisma Client not generated`**
-
-Run:
-```bash
-npm run generate
-```
-
-## 📝 Notes
-
-- The server uses ES modules (`type: "module"` in package.json)
-- Environment variables are loaded from `.env.local` first, then `.env`
-- CORS is enabled for all origins (configure for production)
-- The server uses `express-validator` for request validation
-- Prisma Client is generated automatically on `npm install`
-
 ## 🔗 Related Documentation
 
 - [Main Project README](../README.md)
+- [Frontend README](../frontend/README.md)
 - [Neon DB Setup Guide](./NEON_SETUP.md)
 - [Prisma Documentation](https://www.prisma.io/docs)
 - [Express.js Documentation](https://expressjs.com/)
