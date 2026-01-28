@@ -1,9 +1,9 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma.js';
+import { isDbUnavailableError, toDbUnavailableResponse } from '../utils/dbErrors.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Validation middleware
 const validateEmployee = [
@@ -26,6 +26,10 @@ router.get('/', async (req, res, next) => {
     });
     res.json(employees);
   } catch (error) {
+    if (isDbUnavailableError(error)) {
+      const { status, body } = toDbUnavailableResponse();
+      return res.status(status).json(body);
+    }
     next(error);
   }
 });
@@ -48,6 +52,10 @@ router.get('/:id', async (req, res, next) => {
 
     res.json(employee);
   } catch (error) {
+    if (isDbUnavailableError(error)) {
+      const { status, body } = toDbUnavailableResponse();
+      return res.status(status).json(body);
+    }
     next(error);
   }
 });
@@ -94,6 +102,10 @@ router.post('/', validateEmployee, async (req, res, next) => {
     if (error.code === 'P2002') {
       return res.status(409).json({ error: 'Duplicate entry detected' });
     }
+    if (isDbUnavailableError(error)) {
+      const { status, body } = toDbUnavailableResponse();
+      return res.status(status).json(body);
+    }
     next(error);
   }
 });
@@ -115,6 +127,10 @@ router.delete('/:id', async (req, res, next) => {
 
     res.status(204).send();
   } catch (error) {
+    if (isDbUnavailableError(error)) {
+      const { status, body } = toDbUnavailableResponse();
+      return res.status(status).json(body);
+    }
     next(error);
   }
 });

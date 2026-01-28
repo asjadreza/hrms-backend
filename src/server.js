@@ -5,6 +5,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import employeeRoutes from './routes/employees.js';
 import attendanceRoutes from './routes/attendance.js';
+import prisma from './utils/prisma.js';
+import { isDbUnavailableError, toDbUnavailableResponse } from './utils/dbErrors.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,12 +33,42 @@ app.get('/api/health', (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+  // If Neon is temporarily unreachable, avoid leaking Prisma internals to the frontend.
+  if (isDbUnavailableError(err)) {
+    const { status, body } = toDbUnavailableResponse();
+    return res.status(status).json(body);
+  }
+
   console.error(err.stack);
   res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error',
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+async function connectWithRetry({ retries = 5, delayMs = 1500 } = {}) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      await prisma.$connect();
+      return true;
+    } catch (err) {
+      const isLast = attempt === retries;
+      console.warn(
+        `Database connection attempt ${attempt}/${retries} failed${
+          isLast ? '' : `, retrying in ${delayMs}ms`
+        }.`
+      );
+      if (isLast) return false;
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  return false;
+}
+
+(async () => {
+  // Warm up Prisma/Neon on startup to reduce first-request failures (Neon can be sleeping).
+  await connectWithRetry();
+
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+})();

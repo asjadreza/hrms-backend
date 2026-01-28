@@ -1,9 +1,9 @@
 import express from 'express';
 import { body, validationResult, query } from 'express-validator';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma.js';
+import { isDbUnavailableError, toDbUnavailableResponse } from '../utils/dbErrors.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Validation middleware
 const validateAttendance = [
@@ -64,6 +64,10 @@ router.get('/', [
 
     res.json(attendances);
   } catch (error) {
+    if (isDbUnavailableError(error)) {
+      const { status, body } = toDbUnavailableResponse();
+      return res.status(status).json(body);
+    }
     next(error);
   }
 });
@@ -120,6 +124,10 @@ router.get('/employee/:employeeId', async (req, res, next) => {
       },
     });
   } catch (error) {
+    if (isDbUnavailableError(error)) {
+      const { status, body } = toDbUnavailableResponse();
+      return res.status(status).json(body);
+    }
     next(error);
   }
 });
@@ -203,6 +211,10 @@ router.post('/', validateAttendance, async (req, res, next) => {
     if (error.code === 'P2002') {
       return res.status(409).json({ error: 'Attendance already marked for this date' });
     }
+    if (isDbUnavailableError(error)) {
+      const { status, body } = toDbUnavailableResponse();
+      return res.status(status).json(body);
+    }
     next(error);
   }
 });
@@ -249,6 +261,10 @@ router.get('/dashboard/summary', async (req, res, next) => {
       employeesSummary,
     });
   } catch (error) {
+    if (isDbUnavailableError(error)) {
+      const { status, body } = toDbUnavailableResponse();
+      return res.status(status).json(body);
+    }
     next(error);
   }
 });
